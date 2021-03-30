@@ -10,7 +10,7 @@ requests = "*"
 scrapy = "*"
 beautifulsoup4 = "*"
 requests-cache = "*"
-newspaper3k = "*"
+pysocks = "*"
 
 [requires]
 python_version = "3.8"

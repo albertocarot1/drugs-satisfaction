@@ -28,10 +28,14 @@ class ProxyCredentials:
             credentials = json.load(open_json)
         self.username = credentials["username"]
         self.password = credentials["password"]
-        self.server = "it212.nordvpn.com"
+        self.server = credentials["server"]
 
     def get_proxy(self):
-        proxy_string = f"{self.username}:{self.password}@{self.server}"
+        """
+        Return proxy credentials to use to make socks calls though requests
+        :return: dict with credenials and server for http and https
+        """
+        proxy_string = f"socks5://{self.username}:{self.password}@{self.server}:1080"
         return {
             'http': proxy_string,
             'https': proxy_string
@@ -49,19 +53,21 @@ class ExperienceScraper:
     substances_simple: list = []
     metadata: dict = {}
     tags: list = []
-    proxy: dict = {}
+    proxy_server: dict = {}
+    was_cached: bool = False
 
-    def __init__(self, url: str):
+    def __init__(self, url: str, proxy_server: Optional[Dict[str, str]] = None):
         self.url = url
         self.exp_id = urlparse(url).query.split('=')[1]
+        self.proxy_server = proxy_server
 
     def get_experience(self):
         """
         Retrieve the experience HTML code and input it
         for further processing
         """
-        res = requests.get(self.url)
-
+        res = requests.get(self.url, proxies=self.proxy_server)
+        self.was_cached = res.from_cache
         self.soup = BeautifulSoup(res.content, 'html.parser')
 
     def extract_data(self):
@@ -183,18 +189,25 @@ class ErowidScraper:
     save_folder: str = "experiences_db"
     experiences_to_download: Dict[str, ExperienceScraper] = {}
     base_url: str = "https://www.erowid.org/experiences/exp.php?ID="
+    min_wait: int = 10
+    max_wait: int = 30
+    proxy_server: Optional[Dict[str, str]]
 
-    def __init__(self, raise_exceptions: bool = False, proxy_server: Optional[dict] = None):
+    def __init__(self, raise_exceptions: bool = False, proxy_server: Optional[Dict[str, str]] = None):
         self.raise_exceptions = raise_exceptions
+        self.proxy_server = proxy_server
 
     def download(self, wait: bool = False):
         """
         Download all the urls contained in urls_to_be_downloaded
+        Wait for a random interval between a range, if needed.
+        Never wait when the url to download was already cached.
+
         :param wait: Whether it should wait a random number of seconds (in a range) between downloads
         """
         urls_downloaded = 0
         urls_failed = 0
-
+        logging.info(f"A total of {len(self.experiences_to_download)} links will be attempted to download")
         for i, exp_scraper in enumerate(self.experiences_to_download.values()):
             try:
                 logging.info(f"Downloading {exp_scraper.url}...")
@@ -212,8 +225,8 @@ class ErowidScraper:
                     open_txt.write('\n')
                 urls_failed += 1
                 logging.error(f"So far {urls_failed} errors.")
-            if wait:
-                sleep(random.randint(3, 20))
+            if wait and not exp_scraper.was_cached:
+                sleep(random.randint(self.min_wait, self.max_wait))
 
     def update_download_list(self, file: str = ''):
         """
@@ -249,9 +262,10 @@ class ErowidScraper:
 
 def main():
     proxy = ProxyCredentials("credentials.json")
-    erowid_scraper = ErowidScraper(raise_exceptions=True, proxy_server=proxy.get_proxy())
+    erowid_scraper = ErowidScraper(raise_exceptions=False, proxy_server=proxy.get_proxy())
     erowid_scraper.update_download_list('exp_links/mystical_experiences.txt')
     erowid_scraper.update_download_list('exp_links/bad_trips.txt')
+    erowid_scraper.update_download_list()
     erowid_scraper.download(wait=True)
 
 
