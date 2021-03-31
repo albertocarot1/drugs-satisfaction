@@ -3,43 +3,71 @@ import logging
 import os
 import random
 from time import sleep
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 from urllib.parse import urlparse
 
 import requests
 import requests_cache
 from bs4 import BeautifulSoup, Tag, Comment, NavigableString
 
+from utils import from_txt_to_list
+
 requests_cache.install_cache('erowid_cache')
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 
 class MissingExperience(Exception):
     pass
 
 
-class ProxyCredentials:
-    server: str
+class ThrottledException(Exception):
+    pass
+
+
+class ProxyServer:
+    servers: List[str]
     username: str
     password: str
+    server_number: int
+    server_in_use: str
 
     def __init__(self, cred_file):
+        """
+        Use credentials file to setup proxy.
+        Initialise servers in a random order,
+        :param cred_file:
+        """
         with open(cred_file) as open_json:
             credentials = json.load(open_json)
         self.username = credentials["username"]
         self.password = credentials["password"]
-        self.server = credentials["server"]
+        self.servers = credentials["servers"]
+        assert len(self.servers) > 0
+        random.shuffle(self.servers)
+        self.server_number = 0
+        self.server_in_use = self.servers[self.server_number]
+
+    def update_server_used(self):
+        """
+        Change the server in use with the next one in `servers` list
+        """
+        if self.server_number < len(self.servers):
+            self.server_number += 1
+        else:
+            self.server_number = 0
+        self.server_in_use = self.servers[self.server_number]
 
     def get_proxy(self):
         """
         Return proxy credentials to use to make socks calls though requests
         :return: dict with credenials and server for http and https
         """
-        proxy_string = f"socks5://{self.username}:{self.password}@{self.server}:1080"
+        proxy_string = f"socks5://{self.username}:{self.password}@{self.server_in_use}:1080"
         return {
             'http': proxy_string,
             'https': proxy_string
         }
+
 
 
 class ExperienceScraper:
@@ -53,10 +81,11 @@ class ExperienceScraper:
     substances_simple: list = []
     metadata: dict = {}
     tags: list = []
-    proxy_server: dict = {}
+    proxy_server: Optional[ProxyServer] = None
     was_cached: bool = False
+    headers: dict = {"User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:87.0) Gecko/20100101 Firefox/87.0"}
 
-    def __init__(self, url: str, proxy_server: Optional[Dict[str, str]] = None):
+    def __init__(self, url: str, proxy_server: Optional[ProxyServer] = None):
         self.url = url
         self.exp_id = urlparse(url).query.split('=')[1]
         self.proxy_server = proxy_server
@@ -66,7 +95,19 @@ class ExperienceScraper:
         Retrieve the experience HTML code and input it
         for further processing
         """
-        res = requests.get(self.url, proxies=self.proxy_server)
+        proxy = self.proxy_server.get_proxy() if self.proxy_server else None
+        res = requests.get(self.url,
+                           proxies=proxy,
+                           headers=self.headers,
+                           allow_redirects=False)
+        res.raise_for_status()
+        if res.text.find("IP address has been blocked") != -1 and proxy is not None:
+            self.proxy_server.update_server_used()
+            requests.Session().cache.delete_url(self.url)
+            res = requests.get(self.url,
+                               proxies=self.proxy_server.get_proxy(),
+                               headers=self.headers,
+                               allow_redirects=False)
         self.was_cached = res.from_cache
         self.soup = BeautifulSoup(res.content, 'html.parser')
 
@@ -193,7 +234,7 @@ class ErowidScraper:
     max_wait: int = 30
     proxy_server: Optional[Dict[str, str]]
 
-    def __init__(self, raise_exceptions: bool = False, proxy_server: Optional[Dict[str, str]] = None):
+    def __init__(self, raise_exceptions: bool = False, proxy_server: Optional[ProxyServer] = None):
         self.raise_exceptions = raise_exceptions
         self.proxy_server = proxy_server
 
@@ -238,11 +279,7 @@ class ErowidScraper:
         :param file: txt file with one URL per line
         """
         if file:
-            urls = []
-            with open(file) as open_txt:
-                for line in open_txt:
-                    if line.strip():
-                        urls.append(line.strip())
+            urls = from_txt_to_list(file)
         else:
             random.seed(self.seed)
             experiences_possible_ids = list(range(1, 130000))
@@ -251,21 +288,23 @@ class ErowidScraper:
             for exp_id in experiences_possible_ids:
                 urls.append(f"{self.base_url}{exp_id}")
         for url in urls:
-            exp_scraper = ExperienceScraper(url)
+            exp_scraper = ExperienceScraper(url, proxy_server=self.proxy_server)
             candidate_path = os.path.join(self.save_folder, f"{exp_scraper.exp_id}.json")
             if os.path.isfile(candidate_path):
-                logging.info(f"Experience {exp_scraper.exp_id} already downloaded")
+                logging.debug(f"Experience {exp_scraper.exp_id} already downloaded")
             else:
                 exp_scraper.save_path = candidate_path
                 self.experiences_to_download[exp_scraper.exp_id] = exp_scraper
 
 
 def main():
-    proxy = ProxyCredentials("credentials.json")
-    erowid_scraper = ErowidScraper(raise_exceptions=False, proxy_server=proxy.get_proxy())
-    erowid_scraper.update_download_list('exp_links/mystical_experiences.txt')
-    erowid_scraper.update_download_list('exp_links/bad_trips.txt')
-    erowid_scraper.update_download_list()
+    proxy = ProxyServer("credentials.json")
+    erowid_scraper = ErowidScraper(raise_exceptions=True, proxy_server=proxy)
+    erowid_scraper.update_download_list('exp_links/failed_urls_ConnectionError.txt')
+    erowid_scraper.update_download_list('exp_links/failed_urls_HTTPError.txt')
+    erowid_scraper.update_download_list('exp_links/failed_urls_IndexError.txt')
+    erowid_scraper.update_download_list('exp_links/failed_urls_MissingExperience.txt')
+    # erowid_scraper.update_download_list()
     erowid_scraper.download(wait=True)
 
 
