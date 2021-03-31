@@ -1,1 +1,6 @@
 /credentials.json
+/test.py
+/exp_links/
+/experiences_db/
+/erowid_cache.sqlite
+/erowid_cache_bkp.sqlite
