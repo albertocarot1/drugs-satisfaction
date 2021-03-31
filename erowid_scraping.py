@@ -16,7 +16,7 @@ requests_cache.install_cache('erowid_cache')
 logging.basicConfig(level=logging.INFO)
 
 
-class MissingExperience(Exception):
+class MissingExperienceFromPage(Exception):
     pass
 
 
@@ -126,7 +126,7 @@ class ExperienceScraper:
         try:
             story_tag = self.soup.find_all(class_='report-text-surround')[0]
         except Exception:
-            raise MissingExperience(f"Missing Experience report for ID {self.url}")
+            raise MissingExperienceFromPage(f"Missing Experience report for ID {self.url}")
 
         save_row = False
         for row in story_tag.contents:

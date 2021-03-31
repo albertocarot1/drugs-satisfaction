@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from typing import List
 
 import requests
@@ -6,11 +5,14 @@ import requests_cache
 
 from utils import from_txt_to_list
 
-requests_cache.install_cache("cache_name")
+requests_cache.install_cache("erowid_cache")
 
-@dataclass
+
 class CacheCleaner:
-    urls_to_clear: List[str]
+    urls_to_clear: List[str] = []
+
+    def add_urls_to_clean(self, urls: List[str]):
+        self.urls_to_clear.extend(urls)
 
     def clean_cache_from_urls(self):
         """
@@ -21,7 +23,12 @@ class CacheCleaner:
 
 
 def main():
-    cleaner=CacheCleaner(from_txt_to_list(""))
+    cleaner = CacheCleaner()
+    cleaner.add_urls_to_clean(from_txt_to_list('exp_links/failed_urls_ConnectionError.txt'))
+    cleaner.add_urls_to_clean(from_txt_to_list('exp_links/failed_urls_HTTPError.txt'))
+    cleaner.add_urls_to_clean(from_txt_to_list('exp_links/failed_urls_IndexError.txt'))
+    cleaner.add_urls_to_clean(from_txt_to_list('exp_links/failed_urls_MissingExperience.txt'))
+    cleaner.clean_cache_from_urls()
 
 
 if __name__ == '__main__':
