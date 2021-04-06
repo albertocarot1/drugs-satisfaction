@@ -94,7 +94,7 @@ class ElementScraper:
         self.was_cached = res.from_cache
         self.soup = BeautifulSoup(res.content, 'html.parser')
 
-    def http_call(self, proxy):
+    def http_call(self, proxy) -> requests.Response:
         raise NotImplementedError("method http_call must be implemented")
 
     def extract_data(self):
@@ -129,12 +129,12 @@ class ListScraper:
         urls_downloaded = 0
         urls_failed = 0
         logging.info(f"A total of {len(self.urls_to_download)} links will be attempted to download")
-        for i, exp_scraper in enumerate(self.urls_to_download.values()):
+        for i, scraper in enumerate(self.urls_to_download.values()):
             try:
-                logging.info(f"Downloading {exp_scraper.url}...")
-                exp_scraper.get()
-                exp_scraper.extract_data()
-                exp_scraper.save()
+                logging.info(f"Downloading {scraper.url}...")
+                scraper.get()
+                scraper.extract_data()
+                scraper.save()
                 urls_downloaded += 1
                 logging.info(f"success. So far {urls_downloaded} pages downloaded correctly.")
             except Exception as e:
@@ -142,11 +142,11 @@ class ListScraper:
                     raise
                 logging.exception('failed:')
                 with open(f'exp_links/failed_urls_{type(e).__name__}.txt', 'a') as open_txt:
-                    open_txt.write(exp_scraper.url)
+                    open_txt.write(scraper.url)
                     open_txt.write('\n')
                 urls_failed += 1
                 logging.error(f"So far {urls_failed} errors.")
-            if wait and not exp_scraper.was_cached:
+            if wait and not scraper.was_cached:
                 sleep(random.randint(self.min_wait, self.max_wait))
 
     def update_download_list(self):

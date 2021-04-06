@@ -36,11 +36,11 @@ class ExperienceScraper(ElementScraper):
         super().__init__(url, proxy_server)
         self.exp_id = urlparse(url).query.split('=')[1]
 
-    def http_call(self, proxy):
+    def http_call(self, proxy) -> requests.Response:
         """
         Make the call to the experiences url
         :param proxy: proxy server to use for the call
-        :return:
+        :return: requests response
         """
         return requests.get(self.url,
                             proxies=proxy,
@@ -170,6 +170,9 @@ class ErowidScraper(ListScraper):
         This list can come directly from a txt file, or can be created
         with ids that might be real or not (as ids are sparse in the
         selected range).
+
+        URLs that are already downloaded (there is a JSON file in the destination with
+        the name of the expected downloaded file) are not added to the list.
 
         :param file: txt file with one URL per line
         """
