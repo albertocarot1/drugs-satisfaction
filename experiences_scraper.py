@@ -2,7 +2,8 @@ import json
 import logging
 import os
 import random
-from typing import Optional
+import re
+from typing import Optional, List, Dict
 from urllib.parse import urlparse
 
 import requests
@@ -26,15 +27,20 @@ class ThrottledException(Exception):
 class ExperienceScraper(ElementScraper):
     exp_id: str
     title: str = ''
-    substances_details: list = []
-    story: list = []
-    substances_simple: list = []
-    metadata: dict = {}
-    tags: list = []
+    substances_details: list = None
+    story: list = None
+    substances_simple: list = None
+    metadata: dict = None
+    tags: list = None
 
     def __init__(self, url: str, proxy_server: Optional[ProxyServer] = None):
         super().__init__(url, proxy_server)
         self.exp_id = urlparse(url).query.split('=')[1]
+        self.substances_details: list = []
+        self.story: list = []
+        self.substances_simple: list = []
+        self.metadata: dict = {}
+        self.tags: list = []
 
     def http_call(self, proxy) -> requests.Response:
         """
@@ -112,11 +118,32 @@ class ExperienceScraper(ElementScraper):
     @staticmethod
     def _dict_from_str(text_str: str):
         # Given a string, extract text and id and return in a dict
+        regex = r"(^|\,)\s*(.+?)\((\d+)\)"
         text_str = text_str.strip()
         parts = text_str.split('(')
         name = parts[0].strip()
         identifier = parts[1].strip().strip(')')
         return {'name': name, 'id': identifier}
+
+    @staticmethod
+    def split_tags(text: str) -> List[Dict[str, str]]:
+        """
+        Split a string into a list of dicts, where there is a name, and an
+        identifier (in brackets). Elements are split by a comma.
+        :param text: text to split
+        :return: list of dict with name and id
+        """
+        text = text.strip()
+        elements: List[Dict[str, str]] = []
+        regex = r"(^|\,)\s*(.+?)\((\d+)\)"
+        matches = re.finditer(regex, text, re.MULTILINE)
+        for match_num, match in enumerate(matches):
+            matched_list = list(match.groups())
+            name = matched_list[1].strip()
+            identifier = matched_list[2].strip()
+            element = {'name': name, 'id': identifier}
+            elements.append(element)
+        return elements
 
     def extract_experience_metadata(self):
         """
@@ -136,12 +163,8 @@ class ExperienceScraper(ElementScraper):
                             self.metadata[text_list[0]] = text_list[1]
                 elif "View as PDF" not in row.text.strip():
                     row_elements = row.text.split(':')
-                    substances = row_elements[0].split(',')
-                    for sub in substances:
-                        self.substances_simple.append(self._dict_from_str(sub))
-                    tags_list = row_elements[1].split(',')
-                    for tag in tags_list:
-                        self.tags.append(self._dict_from_str(tag))
+                    self.substances_simple.extend(self.split_tags(row_elements[0]))
+                    self.tags.extend(self.split_tags(row_elements[1]))
 
     def save(self):
         """
@@ -163,6 +186,19 @@ class ExperienceScraper(ElementScraper):
 class ErowidScraper(ListScraper):
     save_folder: str = "experiences_db"
     base_url: str = "https://www.erowid.org/experiences/exp.php?ID="
+
+    def update_from_folder(self, folder_path: str):
+        """
+        Update the list of experiences to download, using all the txt files
+        found in the indicated folder as files that contain lists of urls.
+
+        :param folder_path: path to folder containing txt files with urls
+        """
+        if os.path.exists(folder_path):
+            all_files = os.listdir(folder_path)
+            for file in all_files:
+                if file.endswith('.txt'):
+                    self.update_download_list(os.path.join(folder_path, file))
 
     def update_download_list(self, file: str = ''):
         """
@@ -197,9 +233,11 @@ class ErowidScraper(ListScraper):
 
 def main():
     proxy = ProxyServer("credentials.json")
-    erowid_scraper = ErowidScraper(raise_exceptions=False, proxy_server=proxy)
-    erowid_scraper.update_download_list()
-    erowid_scraper.download(wait=True)
+    erowid_scraper = ErowidScraper(raise_exceptions=True, proxy_server=proxy)
+    # erowid_scraper.min_wait
+    erowid_scraper.update_download_list('exp_links/failed_urls_IndexError.txt')
+    # erowid_scraper.update_from_folder('exp_links')
+    erowid_scraper.download(wait=False)
 
 
 if __name__ == '__main__':

@@ -54,6 +54,7 @@ class ProxyServer:
         else:
             self.server_number = 0
         self.server_in_use = self.servers[self.server_number]
+        logging.warning(f"Changed server, now using '{self.servers[self.server_number]}'")
 
     def get_proxy(self):
         """
@@ -79,18 +80,29 @@ class ElementScraper:
         self.url = url
         self.proxy_server = proxy_server
 
+    def update_proxy_get_response(self) -> requests.Response:
+        """
+        Update proxy server coordinates, and make call to url
+        :return: response to url get http request
+        """
+        self.proxy_server.update_server_used()
+        requests.Session().cache.delete_url(self.url)
+        return self.http_call(self.proxy_server.get_proxy())
+
     def get(self):
         """
         Retrieve the experience HTML code and input it
         for further processing
         """
         proxy = self.proxy_server.get_proxy() if self.proxy_server else None
-        res = self.http_call(proxy)
-        res.raise_for_status()
+        try:
+            res = self.http_call(proxy)
+            res.raise_for_status()
+        except requests.exceptions.ConnectionError:
+            logging.error("ConnectionError")
+            res = self.update_proxy_get_response()
         if res.text.find("IP address has been blocked") != -1 and proxy is not None:
-            self.proxy_server.update_server_used()
-            requests.Session().cache.delete_url(self.url)
-            res = self.http_call(self.proxy_server.get_proxy())
+            self.update_proxy_get_response()
         self.was_cached = res.from_cache
         self.soup = BeautifulSoup(res.content, 'html.parser')
 

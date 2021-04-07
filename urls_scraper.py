@@ -14,13 +14,14 @@ logging.basicConfig(level=logging.INFO)
 
 class UrlListScraper(ElementScraper):
     params: dict
-    experiences_urls: List[str] = []
+    experiences_urls: List[str] = None
     base_url: str = "https://www.erowid.org/experiences/"
 
     def __init__(self, url: str, params: dict, proxy_server: Optional[ProxyServer] = None):
         super().__init__(url, proxy_server)
         self.params = params
-        self.exp_list_id = f"{params['Start']}_{params['Max']}"
+        self.exp_list_id = f"{params['Start']}_{params['Start'] + params['Max']}"
+        self.experiences_urls = []
 
     def http_call(self, proxy):
         """
@@ -62,7 +63,7 @@ class ErowidUrlsScraper(ListScraper):
     base_url: str = "https://www.erowid.org/experiences/exp.cgi"
     save_folder: str = "exp_links"
     start: int = 0
-    max_step: int = 100
+    max_step: int = 1000
     base_params: dict = {'ShowViews': 0, 'Cellar': 1, 'Start': start, 'Max': max_step}
     final_start: int = 39300
 
@@ -87,9 +88,9 @@ class ErowidUrlsScraper(ListScraper):
 
 def main():
     proxy = ProxyServer("credentials.json")
-    erowid_scraper = ErowidUrlsScraper(raise_exceptions=True, proxy_server=proxy)
+    erowid_scraper = ErowidUrlsScraper(raise_exceptions=False, proxy_server=proxy)
     erowid_scraper.update_download_list()
-    erowid_scraper.download(wait=True)
+    erowid_scraper.download(wait=False)
 
 
 if __name__ == '__main__':
