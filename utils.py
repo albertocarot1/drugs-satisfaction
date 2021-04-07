@@ -3,6 +3,7 @@ import logging
 import random
 from time import sleep
 from typing import List, Optional, Dict
+import socks
 
 import requests
 from bs4 import BeautifulSoup
@@ -98,8 +99,8 @@ class ElementScraper:
         try:
             res = self.http_call(proxy)
             res.raise_for_status()
-        except requests.exceptions.ConnectionError:
-            logging.error("ConnectionError")
+        except (requests.exceptions.ConnectionError, socks.SOCKS5AuthError):
+            logging.error("ConnectionError or SOCKS5AuthError")
             res = self.update_proxy_get_response()
         if res.text.find("IP address has been blocked") != -1 and proxy is not None:
             self.update_proxy_get_response()
