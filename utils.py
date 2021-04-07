@@ -49,7 +49,7 @@ class ProxyServer:
         """
         Change the server in use with the next one in `servers` list
         """
-        if self.server_number < len(self.servers):
+        if self.server_number < len(self.servers) - 1:
             self.server_number += 1
         else:
             self.server_number = 0
