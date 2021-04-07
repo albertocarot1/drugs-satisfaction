@@ -233,10 +233,9 @@ class ErowidScraper(ListScraper):
 
 def main():
     proxy = ProxyServer("credentials.json")
-    erowid_scraper = ErowidScraper(raise_exceptions=True, proxy_server=proxy)
-    # erowid_scraper.min_wait
-    erowid_scraper.update_download_list('exp_links/failed_urls_IndexError.txt')
-    # erowid_scraper.update_from_folder('exp_links')
+    erowid_scraper = ErowidScraper(raise_exceptions=False, proxy_server=proxy)
+    # erowid_scraper.update_download_list('exp_links/failed_urls_IndexError.txt')
+    erowid_scraper.update_from_folder('exp_links')
     erowid_scraper.download(wait=False)
 
 

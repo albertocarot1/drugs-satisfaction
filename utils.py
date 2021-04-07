@@ -3,10 +3,11 @@ import logging
 import random
 from time import sleep
 from typing import List, Optional, Dict
-import socks
 
 import requests
+import socks
 from bs4 import BeautifulSoup
+from tqdm import tqdm
 
 
 def from_txt_to_list(txt_path: str) -> List[str]:
@@ -103,6 +104,7 @@ class ElementScraper:
             logging.error("ConnectionError or SOCKS5AuthError")
             res = self.update_proxy_get_response()
         if res.text.find("IP address has been blocked") != -1 and proxy is not None:
+            logging.error(f"Server blocked the ip address: {res.raw._connection.sock.getsockname()}, on proxy {proxy}")
             self.update_proxy_get_response()
         self.was_cached = res.from_cache
         self.soup = BeautifulSoup(res.content, 'html.parser')
@@ -142,7 +144,7 @@ class ListScraper:
         urls_downloaded = 0
         urls_failed = 0
         logging.info(f"A total of {len(self.urls_to_download)} links will be attempted to download")
-        for i, scraper in enumerate(self.urls_to_download.values()):
+        for i, scraper in tqdm(enumerate(self.urls_to_download.values())):
             try:
                 logging.info(f"Downloading {scraper.url}...")
                 scraper.get()
