@@ -236,7 +236,7 @@ def main():
     erowid_scraper = ErowidScraper(raise_exceptions=False, proxy_server=proxy)
     # erowid_scraper.update_download_list('exp_links/failed_urls_IndexError.txt')
     erowid_scraper.update_from_folder('exp_links')
-    erowid_scraper.download(wait=False)
+    erowid_scraper.download(wait=True)
 
 
 if __name__ == '__main__':

@@ -126,7 +126,7 @@ class ListScraper:
     urls_to_download: Dict[str, ElementScraper] = {}
     base_url: str = ""
     min_wait: int = 10
-    max_wait: int = 30
+    max_wait: int = 20
     proxy_server: Optional[Dict[str, str]]
 
     def __init__(self, raise_exceptions: bool = False, proxy_server: Optional[ProxyServer] = None):
