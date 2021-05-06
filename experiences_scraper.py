@@ -25,17 +25,11 @@ class ThrottledException(Exception):
 
 
 class ExperienceScraper(ElementScraper):
-    exp_id: str
-    title: str = ''
-    substances_details: list = None
-    story: list = None
-    substances_simple: list = None
-    metadata: dict = None
-    tags: list = None
 
     def __init__(self, url: str, proxy_server: Optional[ProxyServer] = None):
         super().__init__(url, proxy_server)
         self.exp_id = urlparse(url).query.split('=')[1]
+        self.title: str = ''
         self.substances_details: list = []
         self.story: list = []
         self.substances_simple: list = []
@@ -114,16 +108,6 @@ class ExperienceScraper(ElementScraper):
                                             'substance_id': substance_id,
                                             'substance_name': substance_name,
                                             'form': form})
-
-    @staticmethod
-    def _dict_from_str(text_str: str):
-        # Given a string, extract text and id and return in a dict
-        regex = r"(^|\,)\s*(.+?)\((\d+)\)"
-        text_str = text_str.strip()
-        parts = text_str.split('(')
-        name = parts[0].strip()
-        identifier = parts[1].strip().strip(')')
-        return {'name': name, 'id': identifier}
 
     @staticmethod
     def split_tags(text: str) -> List[Dict[str, str]]:
