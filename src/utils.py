@@ -156,7 +156,7 @@ class ListScraper:
                 if self.raise_exceptions:
                     raise
                 logging.exception('failed:')
-                with open(f'exp_links/failed_urls_{type(e).__name__}.txt', 'a') as open_txt:
+                with open(f'data/exp_links/failed_urls_{type(e).__name__}.txt', 'a') as open_txt:
                     open_txt.write(scraper.url)
                     open_txt.write('\n')
                 urls_failed += 1

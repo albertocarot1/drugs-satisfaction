@@ -5,7 +5,7 @@ import requests_cache
 
 from utils import from_txt_to_list
 
-requests_cache.install_cache("erowid_cache")
+requests_cache.install_cache("data/erowid_cache")
 
 
 class CacheCleaner:
@@ -24,10 +24,10 @@ class CacheCleaner:
 
 def main():
     cleaner = CacheCleaner()
-    cleaner.add_urls_to_clean(from_txt_to_list('../exp_links/failed_urls_ConnectionError.txt'))
-    cleaner.add_urls_to_clean(from_txt_to_list('exp_links/failed_urls_HTTPError.txt'))
-    cleaner.add_urls_to_clean(from_txt_to_list('../exp_links/failed_urls_IndexError.txt'))
-    cleaner.add_urls_to_clean(from_txt_to_list('exp_links/failed_urls_MissingExperience.txt'))
+    cleaner.add_urls_to_clean(from_txt_to_list('../data/exp_links/failed_urls_ConnectionError.txt'))
+    cleaner.add_urls_to_clean(from_txt_to_list('data/exp_links/failed_urls_HTTPError.txt'))
+    cleaner.add_urls_to_clean(from_txt_to_list('../data/exp_links/failed_urls_IndexError.txt'))
+    cleaner.add_urls_to_clean(from_txt_to_list('data/exp_links/failed_urls_MissingExperience.txt'))
     cleaner.clean_cache_from_urls()
 
 

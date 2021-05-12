@@ -8,7 +8,7 @@ import requests_cache
 
 from utils import ListScraper, ElementScraper, ProxyServer
 
-requests_cache.install_cache('erowid_cache')
+requests_cache.install_cache('data/erowid_cache')
 logging.basicConfig(level=logging.INFO)
 
 
@@ -61,7 +61,7 @@ class UrlListScraper(ElementScraper):
 class ErowidUrlsScraper(ListScraper):
     # Scan through search result pages to collect urls to download.
     base_url: str = "https://www.erowid.org/experiences/exp.cgi"
-    save_folder: str = "exp_links"
+    save_folder: str = "data/exp_links"
     start: int = 0
     max_step: int = 1000
     base_params: dict = {'ShowViews': 0, 'Cellar': 1, 'Start': start, 'Max': max_step}

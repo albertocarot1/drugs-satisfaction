@@ -12,8 +12,8 @@ from bs4 import Tag, Comment, NavigableString
 
 from utils import from_txt_to_list, ProxyServer, ElementScraper, ListScraper
 
-requests_cache.install_cache('erowid_cache')
-logging.basicConfig(level=logging.INFO)
+requests_cache.install_cache('data/erowid_cache')
+logging.basicConfig(level=logging.DEBUG)
 
 
 class MissingExperienceFromPage(Exception):
@@ -168,7 +168,7 @@ class ExperienceScraper(ElementScraper):
 
 
 class ErowidScraper(ListScraper):
-    save_folder: str = "experiences_db"
+    save_folder: str = "data/experiences_db"
     base_url: str = "https://www.erowid.org/experiences/exp.php?ID="
 
     def update_from_folder(self, folder_path: str):
@@ -216,10 +216,10 @@ class ErowidScraper(ListScraper):
 
 
 def main():
-    proxy = ProxyServer("../credentials.json")
+    proxy = ProxyServer("credentials.json")
     erowid_scraper = ErowidScraper(raise_exceptions=False, proxy_server=proxy)
-    # erowid_scraper.update_download_list('exp_links/failed_urls_IndexError.txt')
-    erowid_scraper.update_from_folder('exp_links')
+    # erowid_scraper.update_download_list('data/exp_links/failed_urls_IndexError.txt')
+    erowid_scraper.update_from_folder('data/exp_links')
     erowid_scraper.download(wait=True)
 
 
