@@ -2,6 +2,7 @@ import logging
 import os
 from copy import deepcopy
 from typing import List, Optional
+import sys
 
 import requests
 import requests_cache
@@ -9,7 +10,7 @@ import requests_cache
 from utils import ListScraper, ElementScraper, ProxyServer
 
 requests_cache.install_cache('data/erowid_cache')
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 
 class UrlListScraper(ElementScraper):

@@ -1,5 +1,6 @@
 import json
 import logging
+import sys
 import random
 from time import sleep
 from typing import List, Optional, Dict
@@ -9,6 +10,21 @@ import socks
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 
+# Create logger
+# TODO: add logging to file
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# Create STDERR handler
+handler = logging.StreamHandler(sys.stderr)
+# ch.setLevel(logging.DEBUG)
+
+# Create formatter and add it to the handler
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s', "%Y-%m-%d %H:%M:%S")
+handler.setFormatter(formatter)
+
+# Set STDERR handler as the only handler
+logger.handlers = [handler]
 
 def from_txt_to_list(txt_path: str) -> List[str]:
     """
@@ -56,7 +72,7 @@ class ProxyServer:
         else:
             self.server_number = 0
         self.server_in_use = self.servers[self.server_number]
-        logging.warning(f"Changed server, now using '{self.servers[self.server_number]}'")
+        logger.warning(f"Changed server, now using '{self.servers[self.server_number]}'")
 
     def get_proxy(self):
         """
@@ -101,10 +117,10 @@ class ElementScraper:
             res = self.http_call(proxy)
             res.raise_for_status()
         except (requests.exceptions.ConnectionError, socks.SOCKS5AuthError):
-            logging.error("ConnectionError or SOCKS5AuthError")
+            logger.error("ConnectionError or SOCKS5AuthError")
             res = self.update_proxy_get_response()
         if res.text.find("IP address has been blocked") != -1 and proxy is not None:
-            logging.error(f"Server blocked the ip address: {res.raw._connection.sock.getsockname()}, on proxy {proxy}")
+            logger.error(f"Server blocked the ip address: {res.raw._connection.sock.getsockname()}, on proxy {proxy}")
             self.update_proxy_get_response()
         self.was_cached = res.from_cache
         self.soup = BeautifulSoup(res.content, 'html.parser')
@@ -126,7 +142,7 @@ class ListScraper:
     urls_to_download: Dict[str, ElementScraper] = {}
     base_url: str = ""
     min_wait: int = 20
-    max_wait: int = 28
+    max_wait: int = 23
     proxy_server: Optional[Dict[str, str]]
 
     def __init__(self, raise_exceptions: bool = False, proxy_server: Optional[ProxyServer] = None):
@@ -143,24 +159,24 @@ class ListScraper:
         """
         urls_downloaded = 0
         urls_failed = 0
-        logging.info(f"A total of {len(self.urls_to_download)} links will be attempted to download")
+        logger.info(f"A total of {len(self.urls_to_download)} links will be attempted to download")
         for i, scraper in tqdm(enumerate(self.urls_to_download.values())):
             try:
-                logging.info(f"Downloading {scraper.url}...")
+                logger.info(f"Downloading {scraper.url}...")
                 scraper.get()
                 scraper.extract_data()
                 scraper.save()
                 urls_downloaded += 1
-                logging.info(f"success. So far {urls_downloaded} pages downloaded correctly.")
+                logger.info(f"success. So far {urls_downloaded} pages downloaded correctly.")
             except Exception as e:
                 if self.raise_exceptions:
                     raise
-                logging.exception('failed:')
+                logger.exception('failed:')
                 with open(f'data/exp_links/failed_urls_{type(e).__name__}.txt', mode='a+') as open_txt:
                     open_txt.write(scraper.url)
                     open_txt.write('\n')
                 urls_failed += 1
-                logging.error(f"So far {urls_failed} errors.")
+                logger.error(f"So far {urls_failed} errors.")
             if wait and not scraper.was_cached:
                 sleep(random.randint(self.min_wait, self.max_wait))
 

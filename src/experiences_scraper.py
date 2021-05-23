@@ -5,6 +5,7 @@ import random
 import re
 from typing import Optional, List, Dict
 from urllib.parse import urlparse
+import sys
 
 import requests
 import requests_cache
@@ -13,8 +14,22 @@ from bs4 import Tag, Comment, NavigableString
 from utils import from_txt_to_list, ProxyServer, ElementScraper, ListScraper
 
 requests_cache.install_cache('data/erowid_cache')
-logging.basicConfig(level=logging.DEBUG)
 
+# Create logger
+# TODO: add logging to file
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# Create STDERR handler
+handler = logging.StreamHandler(sys.stderr)
+# ch.setLevel(logging.DEBUG)
+
+# Create formatter and add it to the handler
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s', "%Y-%m-%d %H:%M:%S")
+handler.setFormatter(formatter)
+
+# Set STDERR handler as the only handler
+logger.handlers = [handler]
 
 class MissingExperienceFromPage(Exception):
     pass
@@ -78,7 +93,7 @@ class ExperienceScraper(ElementScraper):
                 if row_str:
                     self.story.append(row_str)
         if not self.story:
-            logging.warning(f"Story is empty for experience with ID {self.exp_id} ")
+            logger.warning(f"Story is empty for experience with ID {self.exp_id} ")
 
     def extract_experience_substances(self):
         """
@@ -209,7 +224,7 @@ class ErowidScraper(ListScraper):
             exp_scraper = ExperienceScraper(url, proxy_server=self.proxy_server)
             candidate_path = os.path.join(self.save_folder, f"{exp_scraper.exp_id}.json")
             if os.path.isfile(candidate_path):
-                logging.debug(f"Experience {exp_scraper.exp_id} already downloaded")
+                logger.debug(f"Experience {exp_scraper.exp_id} already downloaded")
             else:
                 exp_scraper.save_path = candidate_path
                 self.urls_to_download[exp_scraper.exp_id] = exp_scraper
@@ -221,7 +236,7 @@ def main():
     # erowid_scraper.update_download_list('data/exp_links/failed_urls_IndexError.txt')
     erowid_scraper.update_from_folder('data/exp_links')
     erowid_scraper.download(wait=True)
-
+    # 5565
 
 if __name__ == '__main__':
     main()
