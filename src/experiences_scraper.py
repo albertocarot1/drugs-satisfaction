@@ -60,6 +60,7 @@ class ExperienceScraper(ElementScraper):
         return requests.get(self.url,
                             proxies=proxy,
                             headers=self.headers,
+                            timeout=60,
                             allow_redirects=False)
 
     def extract_data(self):

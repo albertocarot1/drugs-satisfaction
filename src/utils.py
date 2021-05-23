@@ -11,7 +11,6 @@ from bs4 import BeautifulSoup
 from tqdm import tqdm
 
 # Create logger
-# TODO: add logging to file
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
