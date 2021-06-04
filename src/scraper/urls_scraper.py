@@ -88,7 +88,7 @@ class ErowidUrlsScraper(ListScraper):
 
 
 def main():
-    proxy = ProxyServer("../credentials.json")
+    proxy = ProxyServer("../../credentials.json")
     erowid_scraper = ErowidUrlsScraper(raise_exceptions=False, proxy_server=proxy)
     erowid_scraper.update_download_list()
     erowid_scraper.download(wait=False)

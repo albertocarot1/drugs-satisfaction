@@ -24,9 +24,9 @@ class CacheCleaner:
 
 def main():
     cleaner = CacheCleaner()
-    cleaner.add_urls_to_clean(from_txt_to_list('../data/exp_links/failed_urls_ConnectionError.txt'))
+    cleaner.add_urls_to_clean(from_txt_to_list('../../data/exp_links/failed_urls_ConnectionError.txt'))
     cleaner.add_urls_to_clean(from_txt_to_list('data/exp_links/failed_urls_HTTPError.txt'))
-    cleaner.add_urls_to_clean(from_txt_to_list('../data/exp_links/failed_urls_IndexError.txt'))
+    cleaner.add_urls_to_clean(from_txt_to_list('../../data/exp_links/failed_urls_IndexError.txt'))
     cleaner.add_urls_to_clean(from_txt_to_list('data/exp_links/failed_urls_MissingExperience.txt'))
     cleaner.clean_cache_from_urls()
 
