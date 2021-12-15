@@ -3,7 +3,7 @@ from typing import List
 import requests
 import requests_cache
 
-from utils import from_txt_to_list
+from scraper.scrapers import from_txt_to_list
 
 requests_cache.install_cache("data/erowid_cache")
 

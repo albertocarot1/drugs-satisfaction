@@ -11,18 +11,17 @@ import requests
 import requests_cache
 from bs4 import Tag, Comment, NavigableString
 
-from utils import from_txt_to_list, ProxyServer, ElementScraper, ListScraper
+from scraper.connection import ProxyServer
+from scraper.scrapers import ElementScraper, ListScraper, from_txt_to_list
 
 requests_cache.install_cache('data/erowid_cache')
 
 # Create logger
-# TODO: add logging to file
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 # Create STDERR handler
 handler = logging.StreamHandler(sys.stderr)
-# ch.setLevel(logging.DEBUG)
 
 # Create formatter and add it to the handler
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s', "%Y-%m-%d %H:%M:%S")

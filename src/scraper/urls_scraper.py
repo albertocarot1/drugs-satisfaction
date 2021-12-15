@@ -2,12 +2,12 @@ import logging
 import os
 from copy import deepcopy
 from typing import List, Optional
-import sys
 
 import requests
 import requests_cache
 
-from utils import ListScraper, ElementScraper, ProxyServer
+from scraper.connection import ProxyServer
+from scraper.scrapers import ElementScraper, ListScraper
 
 requests_cache.install_cache('data/erowid_cache')
 logging.basicConfig(level=logging.DEBUG)
@@ -74,7 +74,6 @@ class ErowidUrlsScraper(ListScraper):
 
         :return:
         """
-        urls_scrapers = []
         for i in range(self.start, self.final_start, self.max_step):
             params = deepcopy(self.base_params)
             params['Start'] = i

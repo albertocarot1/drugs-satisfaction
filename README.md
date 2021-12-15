@@ -28,3 +28,9 @@ at the root of the project.
 In order to start or resume the scraping project, run:
 
     python src/experiences_scraper.py
+
+## Data Analysis
+
+In order to run jupyter lab, execute the following command:
+
+     env PYTHONPATH=<path-to-your-project>/src/ jupyter lab
