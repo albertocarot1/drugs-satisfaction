@@ -61,6 +61,8 @@ class Tag:
 
         self.average_impact: Union[float, None] = None
 
+        self.co_appearances: Dict[str,int]
+
     def calculate_stats(self, total_experiences: int):
         """
         Calculate the percentage of tag appearance in all experiences, and average impact of the tag, considering all
