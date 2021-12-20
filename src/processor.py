@@ -25,6 +25,7 @@ from statistics import mean
 from typing import List, Dict, Union
 
 from tqdm import tqdm
+import pandas as pd
 
 from utils import Experience
 
@@ -61,7 +62,7 @@ class Tag:
 
         self.average_impact: Union[float, None] = None
 
-        self.co_appearances: Dict[str,int]
+        self.co_appearances: Dict[str, int] = {}
 
     def calculate_stats(self, total_experiences: int):
         """
@@ -128,7 +129,9 @@ class ErowidJSONProcessor:
             try:
                 exp = self.get_exp(exp_json)
             except:
+                # Skip experience if the json cannot be parsed for any reason
                 continue
+            found_tags_ids = []
             for tag in exp.tags:
                 if tag['id'] in ['17', '2-9']:
                     tag['id'] = '17'
@@ -141,12 +144,36 @@ class ErowidJSONProcessor:
                                                tag_id=tag['id'],
                                                perc_usage=1 / len(exp.tags)
                                                )
+                found_tags_ids.append(tag['id'])
+
+            for tag in found_tags_ids:
+                for co_occurring_tag in found_tags_ids:
+                    if self.tags[tag].co_appearances.get(co_occurring_tag) is None:
+                        self.tags[tag].co_appearances[co_occurring_tag] = 1
+                    else:
+                        self.tags[tag].co_appearances[co_occurring_tag] += 1
             total_experiences += 1
 
         for tag in self.tags.values():
             tag.calculate_stats(total_experiences)
 
-    # def get_serialized_tags(self):
+    def get_tags_co_appearances_matrix(self) -> pd.DataFrame:
+        # Return a co-appearances matrix of all the tags found in the different experiences.
+
+        tags_co_appearances = []
+        for tag in self.tags.values():
+            co_appearances_titles = {self.tags[tag_id].name: co_appearances for tag_id, co_appearances in tag.co_appearances.items()}
+            tags_co_appearances.append({**co_appearances_titles, 'tag_id':tag.name})
+
+        # Create dataframe from list of dict
+        tags_co_appearances_df = pd.DataFrame(tags_co_appearances)
+        tags_co_appearances_df = tags_co_appearances_df.set_index('tag_id')
+
+        # Make dataframe symmetrical
+        label_union = tags_co_appearances_df.index.union(tags_co_appearances_df.columns)
+        tags_co_appearances_df = tags_co_appearances_df.reindex(index=label_union, columns=label_union)
+        return tags_co_appearances_df
+
 
     @staticmethod
     def process_exp(exp_dict):
