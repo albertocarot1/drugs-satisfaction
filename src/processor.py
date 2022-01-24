@@ -44,6 +44,19 @@ handler.setFormatter(formatter)
 logger.handlers = [handler]
 
 
+class TagType:
+    # Tag Types are used to divide tags, depending on their use for the problem being solved. Thanks to this
+    # we have tags that we can use to exclude experiences, tags that are in the X, tags that are in the Y, and useless
+    # tags that can just be taken out of the equation.
+    def __init__(self, tags_categories_path: str, legend_path:str):
+        """
+
+        :param tags_categories_path: csv file where all tags are categorized. It must contain the columns with the
+                                    two keys.
+        :param legend_path: csv file were tags categories are described.
+        """
+
+        # Load data from csv and index tags categories ids
 @dataclass
 class Tag:
 
@@ -51,6 +64,8 @@ class Tag:
         self.name: str = name
         self.tag_id: str = tag_id
         self.exp_appearances: int = 1
+
+        self.tag_type: TagType = ''
 
         # Percentage of experiences where the tag appears (e.g. alcohol is very common, this number will be high)
         # Basically exp_apparenaces / total_exp . Can only be calculated when total number of experiences is known.
@@ -91,6 +106,8 @@ class ErowidJSONProcessor:
         self.json_folder = json_folder.rstrip('/')
 
         self.tags: Dict[str, Tag] = dict()
+
+        self.data_points: Dict[str, Experience]
 
     @staticmethod
     def get_exp(exp_json_path: str) -> Experience:
