@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from glob import glob
 from statistics import mean
 from typing import List, Dict, Union
-
+from enum import Enum
 from tqdm import tqdm
 import pandas as pd
 
@@ -44,31 +44,42 @@ handler.setFormatter(formatter)
 logger.handlers = [handler]
 
 
-class TagType:
-    # Tag Types are used to divide tags, depending on their use for the problem being solved. Thanks to this
+class TagCategory(Enum):
+    SETTING = 1
+    OUTCOME = 2
+    DISCARD_EXP = 3
+    DISCARD_TAG = 4
+
+
+class ExperiencesTagCategory:
+    # Tag categories are used to divide tags, depending on their use for the problem being solved. Thanks to this
     # we have tags that we can use to exclude experiences, tags that are in the X, tags that are in the Y, and useless
     # tags that can just be taken out of the equation.
-    def __init__(self, tags_categories_path: str, legend_path:str):
+    def __init__(self, tags_categories_path: str):
         """
 
         :param tags_categories_path: csv file where all tags are categorized. It must contain the columns with the
                                     two keys.
-        :param legend_path: csv file were tags categories are described.
         """
 
-        # Load data from csv and index tags categories ids
+        # Load data from csv and index tags ids
+        tags_categories_df = pd.read_csv(tags_categories_path)
+
+        self.tag_categories: Dict[str, str] = dict(zip(tags_categories_df.tag_id, tags_categories_df.tag_type))
+
+
 @dataclass
 class Tag:
 
-    def __init__(self, name: str, tag_id: str, perc_usage: float):
+    def __init__(self, name: str, tag_id: str, perc_usage: float, category_mapper: ExperiencesTagCategory):
         self.name: str = name
         self.tag_id: str = tag_id
         self.exp_appearances: int = 1
 
-        self.tag_type: TagType = ''
+        self.tag_category: TagCategory = TagCategory(category_mapper.tag_categories[int(tag_id)])
 
         # Percentage of experiences where the tag appears (e.g. alcohol is very common, this number will be high)
-        # Basically exp_apparenaces / total_exp . Can only be calculated when total number of experiences is known.
+        # Basically exp_appearances / total_exp . Can only be calculated when total number of experiences is known.
         self.perc_exp_appearances: Union[float, None] = None
 
         # Percent of usage of the tag among other tags (e.g. Bad Trip is one among three tags, the usage is 0.333)
@@ -107,12 +118,13 @@ class ErowidJSONProcessor:
 
         self.tags: Dict[str, Tag] = dict()
 
-        self.data_points: Dict[str, Experience]
+        self.data_points: Dict[str, Experience] = {}
 
     @staticmethod
     def get_exp(exp_json_path: str) -> Experience:
         """
-        Given the path to a JSON file, return an Experience object
+        Given the path to a JSON file, return an Experience object.
+
         :param exp_json_path: path where to find the correctly formatted experience
         :return: Instantiated Experience object
         """
@@ -137,8 +149,10 @@ class ErowidJSONProcessor:
     def get_tags(self):
         """
         Create the stats for each Tag found in all the experiences json files.
-
         """
+
+        tags_categories = ExperiencesTagCategory('../data/tags_categories.csv')
+
         total_experiences = 0
         for exp_json in tqdm(glob(f'{self.json_folder}/*.json')):
 
@@ -159,8 +173,8 @@ class ErowidJSONProcessor:
                 else:
                     self.tags[tag['id']] = Tag(name=tag['name'],
                                                tag_id=tag['id'],
-                                               perc_usage=1 / len(exp.tags)
-                                               )
+                                               perc_usage=1 / len(exp.tags),
+                                               category_mapper=tags_categories)
                 found_tags_ids.append(tag['id'])
 
             for tag in found_tags_ids:
@@ -175,7 +189,11 @@ class ErowidJSONProcessor:
             tag.calculate_stats(total_experiences)
 
     def get_tags_co_appearances_matrix(self) -> pd.DataFrame:
-        # Return a co-appearances matrix of all the tags found in the different experiences.
+        """
+        Create tags co-appearances matrix and return it as a dataframe.
+        This can then be visualized like a correlation matrix.
+        :return: a co-appearances matrix of all the tags found in the different experiences
+        """
 
         tags_co_appearances = []
         for tag in self.tags.values():
