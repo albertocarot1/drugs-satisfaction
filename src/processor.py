@@ -76,6 +76,8 @@ class Tag:
         self.tag_id: str = tag_id
         self.exp_appearances: int = 1
 
+        # TODO make sure the right category is assigned
+        # TODO always use type or category for tag
         self.tag_category: TagCategory = TagCategory(category_mapper.tag_categories[int(tag_id)])
 
         # Percentage of experiences where the tag appears (e.g. alcohol is very common, this number will be high)
@@ -101,12 +103,36 @@ class Tag:
         self.average_impact = mean(self.perc_usages)
 
     def to_dict(self):
+        #TODO add tag type
         return {'name': self.name,
                 'tag_id': self.tag_id,
                 'exp_appearances': self.exp_appearances,
                 'perc_exp_appearances': self.perc_exp_appearances,
                 'perc_usages': self.perc_usages,
                 'average_impact': self.average_impact}
+
+
+class Substance:
+    # id: str
+    # name: str
+    # methods: List[str]
+    # measure units: List[str]
+    # category: str
+    # substance type: str
+    # substance forms: List[str]
+    # substance appearances
+    # Percentage of experiences where the tag appears (e.g. alcohol is very common, this number will be high)
+    # Basically exp_appearances / total_exp . Can only be calculated when total number of experiences is known.
+    # self.perc_exp_appearances: Union[float, None] = None
+
+    # Percent of usage of the tag among other tags (e.g. Bad Trip is one among three tags, the usage is 0.333)
+    # Average is calculated among all appearances. Can only be calculated when total number of experiences is known.
+    # self.perc_usages: List[float] = [perc_usage]
+
+    # self.average_impact: Union[float, None] = None
+    #
+    # self.co_appearances: Dict[str, int] = {}
+    def __init__(self, name: str, substance_id: str, perc_usage: float, category_mapper: ExperiencesTagCategory):
 
 
 class ErowidJSONProcessor:
@@ -212,6 +238,7 @@ class ErowidJSONProcessor:
 
     @staticmethod
     def process_exp(exp_dict):
+        # TODO create from here
         pass
 
 
