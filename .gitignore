@@ -1,10 +1,7 @@
 /credentials.json
 /test.py
-/data/exp_links/
 /experiences_db/
 /erowid_cache.sqlite
 /erowid_cache_bkp.sqlite
 /experiences_db_old/
-/data/experiences_db/
-/data/experiences_db_old/
-/data/erowid_cache.sqlite
+/data/

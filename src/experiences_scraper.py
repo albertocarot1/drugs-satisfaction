@@ -194,11 +194,11 @@ class ErowidScraper(ListScraper):
 
         :param folder_path: path to folder containing txt files with urls
         """
-        if os.path.exists(folder_path):
-            all_files = os.listdir(folder_path)
-            for file in all_files:
-                if file.endswith('.txt'):
-                    self.update_download_list(os.path.join(folder_path, file))
+        assert os.path.exists(folder_path), "Folder with links not found"
+        all_files = os.listdir(folder_path)
+        for file in all_files:
+            if file.endswith('.txt'):
+                self.update_download_list(os.path.join(folder_path, file))
 
     def update_download_list(self, file: str = ''):
         """

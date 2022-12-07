@@ -23,7 +23,9 @@ and some tags (assigned by the experiences' writers) which summarize in natural 
 ### Web scraping
 
 Before starting to scrape, if you want to use a proxy server, make sure you have a correct `credentials.json` file
-at the root of the project.
+at the root of the project. To see how the credentials is formed, inspect `credentials_template.json`.
+
+**NOTE: NordVPN was used as proxy, code modifications might be necessary with other proxy methods**
 
 In order to start or resume the scraping project, run:
 
