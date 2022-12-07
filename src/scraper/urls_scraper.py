@@ -75,7 +75,7 @@ class ErowidUrlsScraper(ListScraper):
         :return:
         """
         for i in range(self.start, self.final_start, self.max_step):
-            params = deepcopy(self.base_params)
+            params = self.base_params
             params['Start'] = i
             urls_scraper = UrlListScraper(self.base_url, params, proxy_server=self.proxy_server)
             candidate_path = os.path.join(self.save_folder, f"{urls_scraper.exp_list_id}.txt")
@@ -87,7 +87,7 @@ class ErowidUrlsScraper(ListScraper):
 
 
 def main():
-    proxy = ProxyServer("../../credentials.json")
+    proxy = ProxyServer("credentials.json")
     erowid_scraper = ErowidUrlsScraper(raise_exceptions=False, proxy_server=proxy)
     erowid_scraper.update_download_list()
     erowid_scraper.download(wait=False)
